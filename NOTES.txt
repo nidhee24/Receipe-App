@@ -1,0 +1,188 @@
+Directives:
+
+Attributes and structural directives
+Attributes directive basically acts as attribute and can be added within elements 
+structural directives basically acts same but it also change the structure of DOM around paragraph
+eg. If you have ngif and if the statement get false it is removed from DOM so overall view container can affected 
+but in case of attribute directive you never destroy the element from DOM can only change properties of element
+like background color.
+
+
+if we use ngIf and ngFor in a same element it will give error so we can't do that.
+
+ngclass and ngStyle:
+
+app.css
+
+.odd {
+color: red }
+
+.html
+
+<div 
+[ngClass]="{odd: odd % 2 !== 0}"
+[ngStyle]="{backgroundColor: odd % 2 !== 0 ? 'yellow' : 'transparent'}">
+
+
+Create own Attribute directive:
+
+first of all create folder and inside that create file called basic-highlight.directive.ts
+
+@Directive({
+	selector: '[appBasicHighlight]'
+})
+
+export class BasicHighlightDirective implements OnInit {
+
+	constructor(private elementRef: ElementRef) {
+	}
+
+	ngOnInit(){
+		this.elementRef.nativeElement.style.backgroundColor = 'green';
+	}
+}
+
+
+To use directive,
+1. first of all inform app module regarding the directive so like component
+we have to declare Directive name in declaration
+2. now in html in order to use that directive,
+
+eg. <p appBasicHighlight>Style</p>
+ appBasicHighlight is the name of directive used as selector in directive.ts file.
+
+the above was the example of creating directive manually.
+
+command is: ng g d better-hightlight
+
+@Directive({
+	selector: '[appBetterHighlight]'
+})
+
+export class BetterHighlightDirective implements OnInit {
+
+	constructor(private elRef: ElementRef, private renderer: Renderer2){
+	}
+
+	ngOnInit(){
+		this.renderer.setStyle(this.elRef.nativeElement,'background-color','blue')
+	}
+}
+
+and then use it to html as above.
+Renderer is the better approach of accessing DOM because angular is not limited to running
+in browser here but also with service workers and this are the example where you might not have
+access to the DOM.
+
+So like in first example if you try to access DOM using native element you might get an
+error in some circumstances. In some cases we might know if our app is going to run in 
+browser or not but it is a best practice to use Renderer for DOM access
+
+
+HostListener to listen to Host Events:
+
+@Directive({
+	selector: '[appBetterHighlight]'
+})
+
+export class BetterHighlightDirective implements OnInit {
+
+	constructor(private elRef: ElementRef, private renderer: Renderer2){
+	}
+
+	ngOnInit(){
+		//this.renderer.setStyle(this.elRef.nativeElement,'background-color','blue')
+	}
+
+	@HostListener('mouseenter') mouseover(eventData: Event) {
+		this.renderer.setStyle(this.elRef.nativeElement,'background-color','blue')
+	}
+
+	@HostListener('mouseleave') mouseover(eventData: Event) {
+		this.renderer.setStyle(this.elRef.nativeElement,'background-color','transparent')
+
+	}
+}
+
+
+
+HostBinding to host properties (An alternative of using renderer):
+@HostBinding('style.backgroundColor') backgroundColor : string = 'transparent';
+
+@HostListener('mouseenter') mouseover(eventData: Event) {
+		//this.renderer.setStyle(this.elRef.nativeElement,'background-color','blue')}
+		this.backgroungColor = 'blue'
+
+	@HostListener('mouseleave') mouseover(eventData: Event) {
+		//this.renderer.setStyle(this.elRef.nativeElement,'background-color','transparent')
+		this.backgroundColor = 'transparent'
+	}
+
+
+Custom Property Binding:
+
+@Input() defaultColor: string = 'transparent'
+@Input() highlightColor: string = 'blue'
+@HostBinding('style.backgroundColor') backgroundColor : string ;
+
+ngOnInit(){
+	this.backgroundColor = this.defaultColor
+	}
+@HostListener('mouseenter') mouseover(eventData: Event) {
+		//this.renderer.setStyle(this.elRef.nativeElement,'background-color','blue')}
+		this.backgroungColor = this.highlightColor
+
+	@HostListener('mouseleave') mouseover(eventData: Event) {
+		//this.renderer.setStyle(this.elRef.nativeElement,'background-color','transparent')
+		this.backgroundColor = this.defaultColor: 
+	}
+
+in html,
+<p appBetterHighlight [defaultColor]="'yellow'" [highlightColor]="'red'"></p>
+
+
+In above example we can see there are 2 properties binding to same <p> tag, but the que is
+how angular came to know? So for this angular first check created Directive and from that it will
+figure out by itself so we can bind to properties of our own directives by simply placing 
+them on the same element.
+
+
+we can give alias in @Input() while binding if you want 
+[defaultColor]="'yellow'" an alternative of this is defaultColor = "yellow" (you can remove 
+square bracket and single quotation mark.
+
+
+why * in *ngIf or *ngFor?
+1. * denotes structural directives
+2. Angular will transform them to something else because there is no star in angular syntax when using
+directivers or property binding so if you want to directly place it on element that want to be 
+conditionally render then we can use *ngIf or *ngFor but on case if we don't wanna use * then there 
+is an alternative as follow:
+
+<ng-template [ngIf]="!onlyOdd">
+//we can place logic here
+</ng-template>  //this is behind scenes for * 
+
+Building own structural directives:
+
+@Directive({
+	selector: '[appUnless]'
+})
+
+export class UnlessDirective {
+	@Input() set appUnless(condition: boolean) {
+	if(!condition){
+		this.vcRef.createEmbeddedView(this.templateRef);
+	}
+	else{
+		this.vcRef.clear();
+	}
+	}
+
+	constructor(private templateRef: TemplateRef<any>, private vRef : ViewContainerRef)
+	{}
+}
+so in html:
+<div *appUnless="onlyOdd">
+	//logic
+</div>
